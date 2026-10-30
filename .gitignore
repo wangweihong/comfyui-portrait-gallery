@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+*.log
+*.pid
+*.part
+.venv/
+dist/
+artifacts/

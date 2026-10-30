@@ -1,0 +1,150 @@
+{
+  "23": {
+    "inputs": {
+      "costume_id": "SPR-0002"
+    },
+    "class_type": "CostumeGallery",
+    "_meta": {
+      "title": "Costume Gallery 服装图库 - 选择目标服装原图"
+    }
+  },
+  "30": {
+    "inputs": {
+      "portrait_id": "f71f980dde3"
+    },
+    "class_type": "PortraitGallery",
+    "_meta": {
+      "title": "Portrait Gallery 人像图库 - 选择人物身份与发型参考"
+    }
+  },
+  "31": {
+    "inputs": {
+      "unet_name": "image2image/qwen_image_2.1_bf16.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model - 加载Qwen Image 2.1基础模型"
+    }
+  },
+  "32": {
+    "inputs": {
+      "device": "auto",
+      "dtype": "default",
+      "model": [
+        "31",
+        0
+      ]
+    },
+    "class_type": "QwenImage21Cache",
+    "_meta": {
+      "title": "Qwen Image 2.1 Cache - 缓存人物与服装双参考"
+    }
+  },
+  "33": {
+    "inputs": {
+      "clip_name": "text_encoders/qwen3vl_8b_bf16.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP - 加载Qwen视觉文本编码器"
+    }
+  },
+  "34": {
+    "inputs": {
+      "vae_name": "vae/qwen_image_2.1_vae_bf16.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE - 加载Qwen配套图像编解码器"
+    }
+  },
+  "35": {
+    "inputs": {
+      "prompt": "以图1作为人物身份参考，以图2作为服装参考，生成该人物穿着这套服装在城市街道自然行走的全身摄影。图1仅提供五官、面部身份和发型，不沿用头像特写的构图或头部在画面中的占比。重新构建一个自然、协调的成年人完整身体，使头部、肩颈、躯干、骨盆、手臂和双腿处于统一的人体尺度，头身比例正常，肩宽与头部大小匹配，躯干和腿部长度自然。保持图2服装的设计、颜色、材质及搭配层次，但根据人物的身体尺寸调整衣服，肩线、袖长、腰线和衣摆落在合理位置，衣物贴合身体并随行走产生自然褶皱和遮挡；外套应实际穿在身上。平视、正常焦段，人物从头顶到鞋底完整入镜，上下留少量空间。真实摄影，透视和光照一致。",
+      "negative_prompt": "",
+      "resolution": 1024,
+      "clip": [
+        "33",
+        0
+      ],
+      "images.image_1": [
+        "30",
+        0
+      ],
+      "images.image_2": [
+        "23",
+        0
+      ],
+      "vae": [
+        "34",
+        0
+      ]
+    },
+    "class_type": "TextEncodeQwenImage21",
+    "_meta": {
+      "title": "Text Encode Qwen Image 2.1 - 编码人物服装与自然身体比例"
+    }
+  },
+  "36": {
+    "inputs": {
+      "seed": 2026103002,
+      "steps": 25,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0,
+      "model": [
+        "32",
+        0
+      ],
+      "positive": [
+        "35",
+        0
+      ],
+      "negative": [
+        "35",
+        1
+      ],
+      "latent_image": [
+        "35",
+        2
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler - 25步生成人物换装图像"
+    }
+  },
+  "37": {
+    "inputs": {
+      "samples": [
+        "36",
+        0
+      ],
+      "vae": [
+        "34",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode - 解码Qwen换装图像"
+    }
+  },
+  "38": {
+    "inputs": {
+      "filename_prefix": "images/qwen/gallery/results/portrait_outfit",
+      "images": [
+        "37",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image - 保存人物换装结果"
+    }
+  }
+}

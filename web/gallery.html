@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>AI 人像参考库｜1,499 张正脸与造型参考 · PORTRAIT Atlas</title>
+  <meta name="description" content="完整中文人像参考图库，收录 893 张正脸与 606 张造型参考。按发型、风格和关键词筛选，收藏、查看大图并下载本地 PNG 原图，适用于 AI 绘画与角色一致性参考。">
+  <meta name="keywords" content="AI人像,脸部参考,AI角色一致性,发型参考,人像图库,造型参考,ComfyUI">
+  <meta name="theme-color" content="#f7f5f0">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:site_name" content="PORTRAIT Atlas">
+  <meta property="og:title" content="AI 人像参考库 · PORTRAIT Atlas">
+  <meta property="og:description" content="1,499 张人像参考，893 张正脸与 606 张造型，完整中文筛选与 PNG 原图下载。">
+  <meta property="og:image" content="og-cover.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AI 人像参考库 · PORTRAIT Atlas">
+  <meta name="twitter:description" content="为你的下一个角色，找到一张熟悉的脸。">
+  <meta name="twitter:image" content="og-cover.png">
+  <link rel="icon" type="image/svg+xml" href="ui/icon.svg">
+  <link rel="stylesheet" href="ui/style.css">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ImageGallery","name":"AI 人像参考库 · PORTRAIT Atlas","inLanguage":"zh-CN","description":"1,499 张 AI 人像参考图片，含正脸与造型参考。","isBasedOn":"https://ai-portrait-gallery.pages.dev/"}</script>
+  <script defer src="data.js"></script>
+  <script defer src="ui/core.mjs"></script>
+  <script defer src="ui/app.mjs"></script>
+</head>
+<body>
+  <a class="skip-link" href="#gallery">跳到人像图库</a>
+  <header class="header">
+    <div class="shell topbar">
+      <a class="brand" href="gallery" aria-label="PORTRAIT Atlas 首页"><span class="brand-mark">p.</span><span class="brand-name">PORTRAIT <em>Atlas</em></span><span class="brand-language">中文</span></a>
+      <nav class="nav" aria-label="主导航">
+        <a class="active" href="#gallery">人像图库</a>
+        <button data-info="tips" type="button">使用指南</button>
+        <button data-info="rules" type="button">来源与许可</button>
+        
+        <button id="theme" class="icon-button" type="button" aria-label="切换深色模式" title="切换深色模式"><span data-icon="moon"></span></button>
+      </nav>
+    </div>
+    <section class="shell hero" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="tiny-line"></span> A FACE FOR EVERY STORY</p>
+        <h1 id="page-title">为你的下一个角色，<br>找到一张<span>熟悉的脸。</span></h1>
+        <p class="hero-description">一张脸，一个故事的起点。<br>从正脸到造型，探索 1,499 张 AI 人像参考，<br class="desktop-break">让角色的每一次出场，都有迹可循。</p>
+        <div class="hero-actions"><a class="button button-dark" href="#gallery">探索人像图库 <span data-icon="arrow-right"></span></a><button class="text-button" data-info="tips" type="button">如何使用 <span>↗</span></button></div>
+        <dl class="hero-stats"><div><dd>893</dd><dt>正脸参考</dt></div><div><dd>606</dd><dt>造型参考</dt></div><div><dd>4</dd><dt>发型长度</dt></div><div><dd class="license-stat">CC0</dd><dt>原站标注许可</dt></div></dl>
+      </div>
+      <div class="hero-art" id="hero-art" aria-label="不同发型的人像参考预览"></div>
+    </section>
+    <div class="shell hero-foot"><span id="current-portrait">从节点打开可选择人像</span><span><i class="status-dot"></i> 完整中文整理 · 原图本地收录</span><span>AI 生成的虚构人物，仅供创作参考 <span aria-hidden="true">↓</span></span></div>
+  </header>
+
+  <main>
+    <section class="shell ranking" aria-labelledby="ranking-title">
+      <div class="section-heading"><div><p class="eyebrow">THE MOST EXPLORED</p><h2 id="ranking-title">灵感，从这里开始<span>原站下载榜 TOP 10</span></h2></div><span class="snapshot">榜单快照 · 2026.10.30</span></div>
+      <div class="rank-tabs" id="rank-tabs" role="group" aria-label="下载榜分类"></div>
+      <ol class="rank-list" id="rank-list"></ol>
+    </section>
+
+    <section id="gallery" class="gallery-section" aria-labelledby="gallery-title">
+      <div class="shell gallery-heading"><div><p class="eyebrow">THE PORTRAIT COLLECTION</p><h2 id="gallery-title">你的角色灵感库<span>每一种风格，都值得被看见</span></h2></div><button id="favorite-filter" class="favorite-filter" type="button" aria-pressed="false"><span data-icon="heart"></span> 我的收藏 <span id="favorite-count">0</span></button></div>
+      <div class="controls"><div class="shell controls-inner">
+        <div class="primary-controls"><div class="section-tabs" id="section-tabs" role="tablist" aria-label="参考类型"></div><label class="search-box"><span data-icon="search"></span><input id="search" type="search" placeholder="搜索发型、风格或 ID…" aria-label="搜索发型、风格或 ID" autocomplete="off"><kbd>/</kbd></label><button id="filter-toggle" class="filter-toggle" type="button" aria-expanded="false" aria-controls="filter-panel"><span data-icon="sliders"></span> 筛选</button></div>
+        <div class="filter-panel" id="filter-panel"><div class="hair-row"><span class="filter-label">发型长度</span><div class="hair-filters" id="hair-filters" role="group" aria-label="发型长度"></div></div><div class="secondary-filters"><label class="style-label"><span class="filter-label">发型风格</span><select id="style-filter" aria-label="发型风格"><option value="">全部风格</option></select></label><button id="reset" class="reset-button" type="button"><span data-icon="reset"></span> 重置筛选</button><span id="section-note" class="section-note"></span></div></div>
+      </div></div>
+      <div class="shell collection-body"><div class="result-bar"><p id="result-count" aria-live="polite"></p><label class="sort-label"><span>排序</span><select id="sort" aria-label="排序方式"><option value="default">原站顺序</option><option value="id">编号 A–Z</option><option value="size">原图尺寸优先</option></select></label></div><div id="active-filters" class="active-filters"></div><div id="grid" class="grid" role="tabpanel" aria-label="参考图片列表"></div><div id="empty" class="empty" hidden><span data-icon="search"></span><h3>还没有找到合适的人像</h3><p>换个关键词，或清除筛选再看看。</p><button type="button" class="button button-dark" id="empty-reset">清除全部筛选</button></div><button id="more" class="more-button" type="button">加载更多 <span data-icon="arrow-down"></span></button><p id="end-note" class="end-note" hidden>你已看完当前筛选下的全部人像。</p><div id="sentinel" aria-hidden="true"></div></div>
+    </section>
+
+    <section class="shell guide" aria-labelledby="guide-title"><div><p class="eyebrow">FROM REFERENCE TO CHARACTER</p><h2 id="guide-title">让灵感，成为你的角色。</h2><p>将参考图带进熟悉的创作工具，<br>从一张稳定的脸，延展出更多故事。</p></div><ol><li><span>01</span><h3>找到喜欢的人像</h3><p>按发型和风格筛选。正脸用于角色面部参考，造型图用于服饰、发质和整体气质参考。</p></li><li><span>02</span><h3>下载 PNG 原图</h3><p>打开大图查看细节，下载完整分辨率原图，也可收藏人像，方便下次回来继续创作。</p></li><li><span>03</span><h3>带入你的创作流程</h3><p>在 ComfyUI 中将人像输出接入支持参考图的工作流。同一张参考图有助于稳定角色特征，效果随模型和设置而变化。</p></li></ol></section>
+  </main>
+
+  <footer class="footer"><div class="shell footer-inner"><div><a class="brand" href="gallery"><span class="brand-mark">p.</span><span class="brand-name">PORTRAIT <em>Atlas</em></span></a><p>为每一个想象中的角色，留下一张清晰的脸。</p><p class="footer-small">独立中文整理项目。图片与原始数据来源：<a href="https://ai-portrait-gallery.pages.dev/" target="_blank" rel="noopener noreferrer">AI モデル顔データベース ↗</a></p></div><div class="footer-links"><a href="https://x.com/agi_aibusi" target="_blank" rel="noopener noreferrer">原作者 あぎ ↗</a><button type="button" data-info="rules">来源与许可</button><a href="catalog" download>中文数据 JSON ↓</a></div></div><div class="shell footer-bottom"><span>1,499 张参考 · 893 正脸 / 606 造型</span><span>本站不收集浏览或下载数据；收藏仅保存在当前浏览器。</span></div></footer>
+
+  <dialog id="viewer" class="viewer" aria-labelledby="viewer-title"><div class="viewer-layout"><div class="viewer-stage" id="viewer-stage"><img id="viewer-image" alt=""><span id="image-status" class="image-status">正在加载原图…</span><button id="viewer-prev" class="viewer-nav prev" type="button" aria-label="上一张"><span data-icon="chevron-left"></span></button><button id="viewer-next" class="viewer-nav next" type="button" aria-label="下一张"><span data-icon="chevron-right"></span></button></div><aside class="viewer-side"><p class="eyebrow" id="viewer-section"></p><h2 id="viewer-title"></h2><div class="viewer-id-row"><code id="viewer-id"></code><button id="copy-id" type="button">复制 ID</button></div><p id="viewer-position" class="viewer-position"></p><dl id="viewer-meta" class="viewer-meta"></dl><p id="viewer-original-style" class="original-style"></p><button id="use-portrait" class="button button-dark" type="button">使用此人像 → ComfyUI</button><a id="viewer-download" class="button button-dark" download>下载 PNG 原图 <span data-icon="download"></span></a><a id="viewer-open" class="button button-outline" target="_blank" rel="noopener noreferrer">新窗口打开原图 <span>↗</span></a><button id="viewer-favorite" class="button button-outline" type="button"><span data-icon="heart"></span> 收藏这张人像</button><p class="viewer-help">← → 切换人像 · Esc 关闭<br>触屏支持左右滑动</p><p class="viewer-source">AI 生成的虚构人物<br>原始素材来自 あぎ 的人像数据库</p></aside></div><button id="viewer-close" class="viewer-close" type="button" aria-label="关闭大图"><span data-icon="close"></span></button></dialog>
+
+  <dialog id="info-dialog" class="info-dialog" aria-labelledby="info-title"><button id="info-close" class="info-close icon-button" type="button" aria-label="关闭说明"><span data-icon="close"></span></button><div id="info-content"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <noscript><p class="noscript">请启用 JavaScript 以浏览图库。全部原图保存在 img/full/，原始与中文清单保存在 data/。</p></noscript>
+</body>
+</html>

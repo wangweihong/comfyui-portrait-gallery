@@ -1,0 +1,10 @@
+[project]
+name = "comfyui-portrait-gallery"
+version = "0.1.0"
+description = "Offline Chinese portrait gallery with original PNG output for ComfyUI"
+requires-python = ">=3.10"
+dependencies = ["Pillow", "numpy", "torch", "aiohttp"]
+license = { text = "MIT (independent code only; see third-party material notices)" }
+
+[tool.comfy]
+DisplayName = "Portrait Gallery 人像图库"

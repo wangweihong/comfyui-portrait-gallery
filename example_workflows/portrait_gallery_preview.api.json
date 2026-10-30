@@ -1,0 +1,24 @@
+{
+  "1": {
+    "class_type": "PortraitGallery",
+    "inputs": {
+      "portrait_id": "f71f980dde3"
+    },
+    "_meta": {
+      "title": "Portrait Gallery 人像图库 - 输出选定人像PNG原图"
+    }
+  },
+  "2": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "1",
+        0
+      ],
+      "filename_prefix": "images/qwen/gallery/references/portrait"
+    },
+    "_meta": {
+      "title": "Save Image - 验证人像节点原图像素输出"
+    }
+  }
+}
