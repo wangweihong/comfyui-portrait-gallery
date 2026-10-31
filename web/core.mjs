@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
-  const sectionLabels = {all: '全部人像', face: '正脸参考', styling: '造型参考'};
-  const hairLabels = {'ショート': '短发', 'ミディアム': '中发', 'セミロング': '中长发', 'ロング': '长发'};
+  const sectionLabels = {all: '全部人像', face: '正脸参考', styling: '造型参考', custom:'未分类人像'};
+  const hairLabels = {'ショート': '短发', 'ミディアム': '中发', 'セミロング': '中长发', 'ロング': '长发', unknown:'未分类'};
   function filterRecords(records, state, favorites = new Set()) {
     const words = String(state.q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
     const result = records.filter(item =>
@@ -14,7 +14,7 @@
   }
   function readState(hash, records) {
     const p = new URLSearchParams(hash.replace(/^#/, ''));
-    const section = ['all', 'face', 'styling'].includes(p.get('sec')) ? p.get('sec') : 'face';
+    const section = ['all', 'face', 'styling', 'custom'].includes(p.get('sec')) ? p.get('sec') : 'face';
     const hair = Object.hasOwn(hairLabels, p.get('hair')) ? p.get('hair') : '';
     const style = records.some(item => item.style === p.get('style')) ? p.get('style') : '';
     const sort = ['default', 'id', 'size'].includes(p.get('sort')) ? p.get('sort') : 'default';

@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "total": 1500,
+    "builtin_count": 1499,
+    "user_count": 1,
+    "builtin_missing": false,
+    "sections": {
+      "face": 893,
+      "styling": 606,
+      "custom": 1
+    }
+  },
+  "custom_id": "u-b101b91f944b4c51acaa4e1d15f3c77e",
+  "source_id": "",
+  "dimensions": [
+    1122,
+    1402
+  ],
+  "api_validation": [
+    {
+      "case": "invalid image",
+      "status": 400,
+      "error": "invalid_image"
+    },
+    {
+      "case": "two images",
+      "status": 400,
+      "error": "single_image_only"
+    },
+    {
+      "case": "unsafe path",
+      "status": 400,
+      "error": "invalid_filename"
+    },
+    {
+      "case": "missing file",
+      "status": 400,
+      "error": "image_required"
+    },
+    {
+      "case": "too large",
+      "status": 413,
+      "error": "file_too_large"
+    }
+  ],
+  "restart_persistence": true,
+  "node_ui_writeback": true,
+  "no_jobs_queued_by_upload_or_selection": true,
+  "python_tests": 16,
+  "node_output_count": 6,
+  "legacy_node_output_verified": true,
+  "original_and_derivatives_verified": true,
+  "node_output": {
+    "id": "u-b101b91f944b4c51acaa4e1d15f3c77e",
+    "dimensions": [
+      1122,
+      1402
+    ],
+    "outputs": 6,
+    "description": "未分类人像 / 未分类 / 自定义示例·人像",
+    "legacy_id": "f71f980dde3",
+    "legacy_dimensions": [
+      1122,
+      1402
+    ],
+    "source_id": ""
+  },
+  "custom_language_form_verified": true,
+  "source_filter_verified": true,
+  "missing_builtin_custom_library_unit_test_passed": true,
+  "browser_viewport_check": {
+    "verified": true,
+    "outer_width": 390,
+    "outer_height": 844,
+    "embedded_page_client_width": 348,
+    "embedded_page_scroll_width": 348,
+    "dialog_width": 331,
+    "dialog_client_width": 314,
+    "dialog_scroll_width": 314
+  },
+  "screenshots": [
+    "docs/custom-upload-form.png",
+    "docs/custom-upload-selected.png",
+    "docs/custom-upload-mobile.png"
+  ],
+  "cancel_without_commit_verified": true,
+  "custom_source_shows_unclassified_without_extra_type_filter": true,
+  "mobile_section_tab_wrap_verified": true
+}

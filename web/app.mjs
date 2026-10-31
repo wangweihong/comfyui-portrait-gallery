@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  const {records, meta, ranking} = window.PORTRAIT_DATA;
+  let {records, meta, ranking} = window.PORTRAIT_DATA;
   const {filterRecords, readState, sectionLabels, hairLabels} = window.PortraitCore;
   const $ = selector => document.querySelector(selector);
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -55,7 +55,7 @@
   function buildHero() {
     const picks = [records.find(item => item.section === 'face')];
     records.filter(item => item.hero).sort((a,b) => a.hero-b.hero).forEach(item => {if (!picks.includes(item)) picks.push(item);});
-    $('#hero-art').innerHTML = picks.slice(0,3).map((item,i) => `<figure class="hero-portrait"><img src="${escape(item.thumb)}" width="${item.thumb_w}" height="${item.thumb_h}" alt="${escape(item.hair_zh)}人像参考" ${i ? 'loading="eager"' : 'fetchpriority="high"'}><figcaption>${escape(item.hair_zh)} / FACE REFERENCE</figcaption></figure>`).join('');
+    $('#hero-art').innerHTML = picks.filter(Boolean).slice(0,3).map((item,i) => `<figure class="hero-portrait"><img src="${escape(item.thumb)}" width="${item.thumb_w}" height="${item.thumb_h}" alt="${escape(item.hair_zh)}人像参考" ${i ? 'loading="eager"' : 'fetchpriority="high"'}><figcaption>${escape(item.hair_zh)} / FACE REFERENCE</figcaption></figure>`).join('');
   }
   function renderRanking() {
     $('#rank-tabs').innerHTML = ranking.cats.map(key => `<button type="button" data-rank="${escape(key)}" aria-pressed="${key === rankCategory}">${escape(ranking.labels[key])}</button>`).join('');
@@ -66,11 +66,11 @@
   $('#rank-list').addEventListener('click', event => {const button=event.target.closest('[data-rank-id]');if(button){const list=ranking.top[rankCategory].map(id=>byId.get(id)).filter(Boolean);openViewer(list,list.findIndex(item=>item.id===button.dataset.rankId));}});
 
   function renderControls() {
-    $('#section-tabs').innerHTML = ['all','face','styling'].map(section => `<button id="tab-${section}" type="button" role="tab" class="section-tab" data-section="${section}" aria-controls="grid" aria-selected="${state.section===section}" tabindex="${state.section===section?0:-1}">${sectionLabels[section]} <small>${fmt(section==='all'?meta.total:meta.sections[section])}</small></button>`).join('');
+    $('#section-tabs').innerHTML = ['all','face','styling','custom'].map(section => `<button id="tab-${section}" type="button" role="tab" class="section-tab" data-section="${section}" aria-controls="grid" aria-selected="${state.section===section}" tabindex="${state.section===section?0:-1}">${sectionLabels[section]} <small>${fmt(section==='all'?meta.total:meta.sections[section])}</small></button>`).join('');
     $('#grid').setAttribute('aria-labelledby', 'tab-' + state.section);
-    const base = filterRecords(records, {...state, hair:'', style:''}, favorites);
+    const base = filterRecords(records.filter(row=>uploads.matches(row)), {...state, hair:'', style:''}, favorites);
     $('#hair-filters').innerHTML = [['','全部发型'], ...Object.entries(hairLabels)].map(([hair,label]) => `<button type="button" class="hair-chip" data-hair="${escape(hair)}" aria-pressed="${state.hair===hair}">${label}<small>${fmt(hair ? base.filter(item=>item.hair===hair).length : base.length)}</small></button>`).join('');
-    const styleBase = filterRecords(records, {...state, style:'', q:''}, favorites);
+    const styleBase = filterRecords(records.filter(row=>uploads.matches(row)), {...state, style:'', q:''}, favorites);
     const styles = [...new Map(styleBase.filter(item=>item.style).map(item=>[item.style,item.style_zh])).entries()];
     $('#style-filter').innerHTML = '<option value="">全部风格</option>' + styles.map(([key,label]) => `<option value="${escape(key)}">${escape(label)}</option>`).join('');
     $('#style-filter').value = state.style;
@@ -78,7 +78,7 @@
     $('#sort').value = state.sort;
     $('#favorite-count').textContent = favorites.size;
     $('#favorite-filter').setAttribute('aria-pressed', String(state.favorites));
-    $('#section-note').textContent = {all:'正脸与造型独立收录，图片之间不保证人物对应',face:'面部特征与角色一致性参考',styling:'服饰、发质与整体气质参考'}[state.section];
+    $('#section-note').textContent = {all:'正脸与造型独立收录，图片之间不保证人物对应',face:'面部特征与角色一致性参考',styling:'服饰、发质与整体气质参考',custom:'用户直接上传的人像参考，类型未分类'}[state.section];
     const active = [['hair',state.hair && hairLabels[state.hair]], ['style',state.style && records.find(item=>item.style===state.style)?.style_zh], ['q',state.q && '搜索：'+state.q], ['favorites',state.favorites && '我的收藏']].filter(([,value])=>value);
     $('#active-filters').innerHTML = active.map(([key,value])=>`<button type="button" class="active-chip" data-clear="${key}" aria-label="移除筛选：${escape(value)}">${escape(value)}<span aria-hidden="true">×</span></button>`).join('');
     const n = active.length;
@@ -86,7 +86,7 @@
   }
   function card(item) {
     const liked = favorites.has(item.id);
-    return `<article class="portrait-card" data-id="${escape(item.id)}" aria-current="${item.id === selectedId}"><div class="card-image"><button class="card-open" type="button" data-open="${escape(item.id)}" aria-label="查看大图：${escape(item.title)}"><img src="${escape(item.thumb)}" alt="${escape(item.section_zh+' · '+item.title)}" loading="lazy" decoding="async" width="${item.thumb_w}" height="${item.thumb_h}"></button><button type="button" class="card-favorite" data-favorite="${escape(item.id)}" aria-pressed="${liked}" aria-label="${liked?'取消收藏':'收藏'}：${escape(item.id)}">${icon('heart')}</button><span class="card-type">${escape(item.section_zh)}</span></div><div class="card-body"><div class="card-heading"><h3>${escape(item.title)}</h3><a class="card-download" href="${escape(item.full)}" download="${escape(item.id)}.png" aria-label="下载 ${escape(item.id)} PNG 原图，${mb(item.bytes)}" title="${item.w}×${item.h} · ${mb(item.bytes)}">${icon('download')}<span>PNG</span></a></div><div class="card-meta"><span>${escape(item.hair_zh)}</span><span>·</span><code>${escape(item.id)}</code></div></div></article>`;
+    return `<article class="portrait-card" data-id="${escape(item.id)}" aria-current="${item.id === selectedId}"><div class="card-image"><button class="card-open" type="button" data-open="${escape(item.id)}" aria-label="查看大图：${escape(item.title)}"><img src="${escape(item.thumb)}" alt="${escape(item.section_zh+' · '+item.title)}" loading="lazy" decoding="async" width="${item.thumb_w}" height="${item.thumb_h}"></button><button type="button" class="card-favorite" data-favorite="${escape(item.id)}" aria-pressed="${liked}" aria-label="${liked?'取消收藏':'收藏'}：${escape(item.id)}">${icon('heart')}</button><span class="card-type">${escape(item.origin==='user'?(uploads.language==='en'?'Custom':'自定义'):item.section_zh)}</span></div><div class="card-body"><div class="card-heading"><h3>${escape(item.title)}</h3><a class="card-download" href="${escape(item.full)}" download="${escape(item.id)}.png" aria-label="下载 ${escape(item.id)} PNG 原图，${mb(item.bytes)}" title="${item.w}×${item.h} · ${mb(item.bytes)}">${icon('download')}<span>PNG</span></a></div><div class="card-meta"><span>${escape(item.hair_zh)}</span><span>·</span><code>${escape(item.id)}</code></div></div></article>`;
   }
   function updateResult() {
     $('#result-count').innerHTML = `共 <strong>${fmt(filtered.length)}</strong> 张${state.favorites?'收藏':''}参考 <span>· 已加载 ${fmt(shown)} 张</span>`;
@@ -108,7 +108,7 @@
     shown = next;updateResult();
   }
   function render(updateURL=true) {
-    filtered = filterRecords(records,state,favorites);
+    filtered = filterRecords(records.filter(row=>uploads.matches(row)),state,favorites);
     $('#grid').replaceChildren();shown=0;
     renderControls();showMore();
     if (updateURL) writeURL(viewer.open && viewerList[viewerIndex] ? viewerList[viewerIndex].id : '');
@@ -118,8 +118,8 @@
   $('#section-tabs').addEventListener('click',event=>{const button=event.target.closest('[data-section]');if(button)setSection(button.dataset.section);});
   $('#section-tabs').addEventListener('keydown',event=>{
     if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
-    event.preventDefault();const sections=['all','face','styling'];const i=sections.indexOf(state.section);
-    const next=event.key==='Home'?0:event.key==='End'?2:(i+(event.key==='ArrowRight'?1:2))%3;
+    event.preventDefault();const sections=['all','face','styling','custom'];const i=sections.indexOf(state.section);
+    const next=event.key==='Home'?0:event.key==='End'?3:(i+(event.key==='ArrowRight'?1:3))%4;
     setSection(sections[next]);$('#tab-'+sections[next]).focus();
   });
   $('#hair-filters').addEventListener('click',event=>{const button=event.target.closest('[data-hair]');if(button){state.hair=button.dataset.hair;state.style='';render();}});
@@ -169,6 +169,8 @@
     $('#viewer-title').textContent=item.title;$('#viewer-id').textContent=item.id;
     $('#viewer-position').textContent=`${fmt(index+1)} / ${fmt(viewerList.length)}`;
     $('#viewer-meta').innerHTML=[['参考类型',item.section_zh],['发型长度',item.hair_zh],['原图尺寸',item.w+' × '+item.h],['文件大小',mb(item.bytes)]].map(([key,value])=>`<dt>${escape(key)}</dt><dd>${escape(value)}</dd>`).join('');
+    $('#viewer-original-style').hidden=item.origin==='user';
+    $('.viewer-source').textContent=item.origin==='user'?`${uploads.language==='en'?'Uploaded file':'用户上传'}: ${item.original_filename}\n${new Date(item.uploaded_at).toLocaleString()}`:'AI 生成的虚构人物\n原始素材来自 あぎ 的人像数据库';
     $('#viewer-original-style').textContent=item.style?'原始描述：'+item.style:'原站未提供更细的发型描述。';
     $('#viewer-download').href=item.full;$('#viewer-download').download=item.id+'.png';$('#viewer-open').href=item.full;
     $('#viewer-prev').disabled=index===0;$('#viewer-next').disabled=index===viewerList.length-1;
@@ -225,6 +227,13 @@
     $('#current-portrait').textContent = '当前节点人像：' + selectedId;
     render(false);
   });
+  function applyUserNames(){records=records.map(row=>row.origin==='user'?{...row,title:uploads.name(row)}:row);byId.clear();records.forEach(row=>byId.set(row.id,row));}
+  const uploads=window.GalleryUploads.mount({kind:'portrait',meta,toolbar:$('.nav'),filters:$('.controls-inner'),
+    onSource(origin){if(origin==='user'||(origin==='builtin'&&state.section==='custom'))state.section='all';render();},onLanguage(){applyUserNames();buildHero();render();if(viewer.open){viewerList=viewerList.map(row=>byId.get(row.id));showViewer(viewerIndex);}},
+    onUploaded(payload,id){clearTimeout(searchTimer);records=payload.records;meta=payload.meta;ranking=payload.ranking;applyUserNames();Object.assign(state,{section:'all',hair:'',style:'',q:'',favorites:false,sort:'default'});buildHero();renderRanking();render();updateTotals();openViewer(filtered,filtered.findIndex(row=>row.id===id));}
+  });
+  function updateTotals(){$('#collection-totals').textContent=`${meta.total} 张参考 · 内置 ${meta.builtin_count} / 自定义 ${meta.user_count}`;}
+  applyUserNames();updateTotals();
   buildHero();renderRanking();render(false);
   if (window.parent !== window) window.parent.postMessage({type:'portrait-gallery-ready'}, location.origin);
   const initialId=new URLSearchParams(location.hash.slice(1)).get('id');

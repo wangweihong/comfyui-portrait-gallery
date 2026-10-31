@@ -1,70 +1,113 @@
-"""Allow-listed, offline portrait assets shared by the node and its gallery UI."""
+"""Allow-listed built-in and persistent user references; no runtime downloads."""
 import json
 import os
 import re
 from functools import lru_cache
 from pathlib import Path
-
 ROOT = Path(__file__).resolve().parent
 LIBRARY = Path(os.environ.get("COMFYUI_PORTRAIT_GALLERY_LIBRARY", ROOT / "library")).resolve()
+try:
+    import folder_paths
+    _USER_DIRECTORY = Path(folder_paths.get_user_directory())
+except ImportError:
+    _USER_DIRECTORY = Path.home() / ".comfyui" / "user"
+USER_LIBRARY = Path(os.environ.get("COMFYUI_PORTRAIT_GALLERY_USER_LIBRARY", _USER_DIRECTORY / "portrait_gallery")).resolve()
+INDEX_FILE = "data/portrait-zh.json"
+ASSET_FIELDS = {'full': 'full', 'preview': 'preview', 'thumb': 'thumb'}
 FIELDS = {"full": ("full", ".png"), "thumb": ("thumb", ".webp")}
-ID_PATTERN = re.compile(r"[a-z0-9_-]{1,80}")
 
+@lru_cache(maxsize=8)
+def _read_index(path, modified, size):
+    rows = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(rows, list):
+        raise ValueError("图库索引格式错误")
+    return rows
 
-@lru_cache(maxsize=1)
+def read_index(root, relative):
+    path = (root / relative).resolve()
+    if not path.is_relative_to(root):
+        raise ValueError("索引路径越界")
+    if not path.is_file():
+        return []
+    stat = path.stat()
+    return _read_index(str(path), stat.st_mtime_ns, stat.st_size)
+
 def records():
-    source = LIBRARY / "data/portrait-zh.json"
-    if not source.is_file():
-        raise FileNotFoundError("人像索引缺失：library/data/portrait-zh.json，请安装完整 comfyui-portrait-gallery 素材库。")
-    data = json.loads(source.read_text(encoding="utf-8"))
-    if not isinstance(data, list) or not data:
-        raise ValueError("人像索引为空或格式错误")
-    ids = set()
-    for row in data:
-        identity = row.get("id") if isinstance(row, dict) else None
-        if not isinstance(identity, str) or not ID_PATTERN.fullmatch(identity) or identity in ids:
-            raise ValueError("人像索引含无效或重复 ID")
-        ids.add(identity)
-        if row.get("section") not in ("face", "styling"):
-            raise ValueError("人像索引含未知参考类型")
-        for kind, (field, suffix) in FIELDS.items():
-            if row.get(field) != f"img/{kind}/{identity}{suffix}":
-                raise ValueError("人像索引含无效图片路径")
-    return data
+    result, seen = [], set()
+    for origin, root, file in [("builtin", LIBRARY, INDEX_FILE), ("user", USER_LIBRARY, "data/custom.json")]:
+        for entry in read_index(root, file):
+            row = dict(entry) if isinstance(entry, dict) else {}
+            identity = row.get("id")
+            if not isinstance(identity, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", identity) or identity in seen:
+                raise ValueError("图库索引含无效或重复 ID")
+            if origin == "user" and not re.fullmatch(r"u-[a-f0-9]{32}", identity):
+                raise ValueError("自定义素材编号无效")
+            if origin == "builtin" and identity.startswith("u-"):
+                raise ValueError("内置素材不能使用自定义编号")
+            seen.add(identity)
+            if row.get("section") not in ("face", "styling", "custom") or (origin == "builtin" and row["section"] == "custom"):
+                raise ValueError("未知人像参考类型")
+            for asset_kind, field in ASSET_FIELDS.items():
+                if field not in row:
+                    if origin == "user" or asset_kind not in OPTIONAL_ASSETS:
+                        raise ValueError("图库索引缺少图片路径")
+                    continue
+                suffix = ".png" if asset_kind == FULL_KIND else (".jpg" if GALLERY == "pose" and origin == "builtin" and asset_kind == "thumbs" else ".webp")
+                expected = f"{PREFIXES[asset_kind]}/{identity}{suffix}"
+                if row[field] != expected:
+                    raise ValueError("图库索引含无效图片路径")
+            row["origin"] = origin
+            if origin == "user":
+                if not isinstance(row.get("name_zh"), str) or not row["name_zh"] or not isinstance(row.get("name_en"), str):
+                    raise ValueError("自定义素材名称无效")
+                row["source_id"] = ""
+            result.append(row)
+    return result
 
+# Keep cache-clear hooks used by existing maintenance scripts and tests.
+records.cache_clear = _read_index.cache_clear
 
-@lru_cache(maxsize=1)
 def index():
     return {row["id"]: row for row in records()}
+index.cache_clear = _read_index.cache_clear
 
-
-def portrait(portrait_id):
-    if not isinstance(portrait_id, str):
-        raise ValueError("人像 ID 必须是字符串")
-    try:
-        return index()[portrait_id]
-    except KeyError:
-        raise ValueError(f"未知人像 ID：{portrait_id}") from None
-
+def portrait(identity):
+    if not isinstance(identity, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", identity):
+        raise ValueError("无效素材 ID")
+    row = index().get(identity)
+    if row is None:
+        raise ValueError("未知素材 ID：" + identity)
+    return row
 
 def asset(kind, filename):
-    if kind not in FIELDS or Path(filename).name != filename or "\\" in filename:
-        raise ValueError("无效人像图片路径")
+    if kind not in ASSET_FIELDS or Path(filename).name != filename or "\\" in filename:
+        raise ValueError("无效图片路径")
     row = portrait(Path(filename).stem)
-    field, suffix = FIELDS[kind]
-    relative = Path("img") / kind / filename
-    target = (LIBRARY / relative).resolve()
-    if Path(filename).suffix != suffix or row[field] != relative.as_posix() or not target.is_relative_to(LIBRARY):
-        raise ValueError("图片不在人像图库允许范围内")
+    root = USER_LIBRARY if row["origin"] == "user" else LIBRARY
+    relative = f"{PREFIXES[kind]}/{filename}"
+    target = (root / relative).resolve()
+    if row.get(ASSET_FIELDS[kind]) != relative or not target.is_relative_to(root):
+        raise ValueError("图片不在图库允许范围内")
     if not target.is_file():
-        raise FileNotFoundError(f"图片缺失：library/{relative}。请重新安装完整人像图库，确认 img/full 和 img/thumb 均已包含。")
+        raise FileNotFoundError(f"图片缺失：library/{relative}。请在节点目录执行 git pull 获取完整图库，或检查自定义素材备份目录。")
     return target
 
+def metadata():
+    rows = records()
+    builtins = sum(row["origin"] == "builtin" for row in rows)
+    return {"total":len(rows), "builtin_count":builtins, "user_count":len(rows)-builtins,
+            "builtin_missing":not (LIBRARY / INDEX_FILE).is_file(),
+            "sections":{section:sum(r.get("section") == section for r in rows) for section in ("face", "styling", "custom")}}
 
 def browser_payload():
-    rows = []
-    for row in records():
-        rows.append(dict(row, full=f"assets/full/{row['id']}.png", thumb=f"assets/thumb/{row['id']}.webp"))
-    meta = json.loads((LIBRARY / "data/meta-zh.json").read_text(encoding="utf-8"))
-    ranking = json.loads((LIBRARY / "data/ranking.json").read_text(encoding="utf-8"))
-    return {"records": rows, "meta": meta, "ranking": ranking}
+    rows = records()
+    meta = metadata()
+    rows = [dict(row, **{field:f"assets/{kind}/{row['id']}{'.png' if kind == 'full' else '.webp'}" for kind,field in ASSET_FIELDS.items() if field in row}) for row in rows]
+    path = LIBRARY / "data/ranking.json"
+    ranking = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {"cats":[], "top":{}, "labels":{}}
+    return {"records":rows, "meta":meta, "ranking":ranking}
+
+GALLERY = 'portrait'
+FULL_KIND = 'full'
+PREFIXES = {'full': 'img/full', 'preview': 'img/preview', 'thumb': 'img/thumb'}
+OPTIONAL_ASSETS = ('preview',)
