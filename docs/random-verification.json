@@ -1,0 +1,81 @@
+{
+  "random_runs": [
+    {
+      "prompt_id": "94472e2e-2867-4bd4-86dc-2cfbc7cd63d7",
+      "source": "all",
+      "selected_id": "fe2f1934a9c",
+      "name": "短狼尾（迷你狼尾剪）",
+      "cached_nodes": [],
+      "dimensions": [
+        1122,
+        1402
+      ]
+    },
+    {
+      "prompt_id": "a05c382a-715f-4be9-97f6-0e2edee86d17",
+      "source": "all",
+      "selected_id": "fa2a9730ad1",
+      "name": "丰富层次剪（薰衣草灰米色）",
+      "cached_nodes": [],
+      "dimensions": [
+        1122,
+        1402
+      ]
+    },
+    {
+      "prompt_id": "aab8521c-736b-47c9-a352-a04e384137a5",
+      "source": "all",
+      "selected_id": "fa439809660",
+      "name": "中发·正脸参考",
+      "cached_nodes": [],
+      "dimensions": [
+        1122,
+        1402
+      ]
+    },
+    {
+      "prompt_id": "d5949472-d462-45e1-af41-f6b2df039389",
+      "source": "builtin",
+      "selected_id": "f3e6e6a56fc",
+      "name": "中发·造型参考",
+      "cached_nodes": [],
+      "dimensions": [
+        1597,
+        2000
+      ]
+    },
+    {
+      "prompt_id": "9ac28d6e-98d1-4b4c-a43b-79647b7e4beb",
+      "source": "user",
+      "selected_id": "u-b101b91f944b4c51acaa4e1d15f3c77e",
+      "name": "自定义示例·人像",
+      "cached_nodes": [],
+      "dimensions": [
+        1122,
+        1402
+      ]
+    }
+  ],
+  "fixed_runs": [
+    {
+      "prompt_id": "dee5a694-93c6-4dd8-9526-8010fd143ad2",
+      "cached_nodes": []
+    },
+    {
+      "prompt_id": "70c669d7-6682-45e0-9717-bb40f80c38fc",
+      "cached_nodes": [
+        "1",
+        "2"
+      ]
+    }
+  ],
+  "python_tests": 21,
+  "new_frontend_tests": 3,
+  "original_node_source_unchanged": true,
+  "port_count": 6,
+  "ui_execution_preview_verified": true,
+  "original_browser_unchanged": true,
+  "screenshots": [
+    "docs/random-node.png"
+  ]
+}

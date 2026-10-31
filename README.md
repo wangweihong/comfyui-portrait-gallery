@@ -7,6 +7,20 @@ ComfyUI 本地中文人像图库节点，提供与 `ai-portrait-gallery-zh` 一�
 ![在 ComfyUI 内搜索并选择人像](docs/gallery-selection.png)
 
 
+
+## 每次运行随机：独立节点
+
+添加 **image → Portrait Gallery → Random Portrait Gallery 随机人像图库**，将 `image` 接入后续工作流或 Preview Image。每次执行会重新随机抽取一张原图，无需点击随机按钮。`origin` 可选 `all`（全部）、`builtin`（内置）或 `user`（自定义）。默认范围包含正脸、造型及自定义人像；不假定不同条目属于同一人物。
+
+原 **PortraitGallery** 的输入、固定选图、缓存、6个输出和连线均保持不变。新节点沿用这6个输出，所有数据对应同一张实际抽中的素材；执行后显示编号和预览。新节点的 `language` 切换界面、提示及自定义预览名称语言，端口数据仍沿用原节点语义，不补造内置描述的译文。
+
+抽样可能偶然重复，不受浏览页面筛选影响；缺失原图会跳过，无可用图片时明确报错。保存的预览编号不参与下次抽样。需要固定结果时，将输出 `portrait_id` 填入原节点。新节点本身不会启动或追加任务。
+
+导入 [随机人像预览示例](example_workflows/random_portrait_preview.json)，附同名 API 工作流。
+
+![独立随机人像节点实测](docs/random-node.png)
+
+
 ## 单张上传自定义人像
 
 1. 在独立图库或节点内嵌图库的顶部点击 **上传人像**。
@@ -133,3 +147,7 @@ node --check web/app.mjs
 ```
 
 图片与元数据来源：[AI モデル顔データベース](https://ai-portrait-gallery.pages.dev/)，原作者 [あぎ](https://x.com/agi_aibusi)。完整来源和适用范围见 `THIRD_PARTY_NOTICES.md`；独立代码的 MIT 许可不改变第三方素材条款。
+
+```bash
+node --test tests/test_random_frontend.cjs
+```
