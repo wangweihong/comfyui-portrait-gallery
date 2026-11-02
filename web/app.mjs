@@ -4,7 +4,12 @@
   const {filterRecords, readState, sectionLabels, hairLabels} = window.PortraitCore;
   const $ = selector => document.querySelector(selector);
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-  const fmt = number => Number(number).toLocaleString('zh-CN');
+  const I = window.PortraitI18n;
+  let language = I.preferred();
+  const t = (source,values) => I.translate(source,language,values);
+  I.registerRows(records);
+  const applyLanguage = I.watchPage(() => language);
+  const fmt = number => Number(number).toLocaleString(language==='en'?'en-US':'zh-CN');
   const mb = bytes => (bytes / 1048576).toFixed(1) + ' MiB';
   const byId = new Map(records.map(item => [item.id, item]));
   const paths = {
@@ -55,12 +60,12 @@
   function buildHero() {
     const picks = [records.find(item => item.section === 'face')];
     records.filter(item => item.hero).sort((a,b) => a.hero-b.hero).forEach(item => {if (!picks.includes(item)) picks.push(item);});
-    $('#hero-art').innerHTML = picks.filter(Boolean).slice(0,3).map((item,i) => `<figure class="hero-portrait"><img src="${escape(item.thumb)}" width="${item.thumb_w}" height="${item.thumb_h}" alt="${escape(item.hair_zh)}人像参考" ${i ? 'loading="eager"' : 'fetchpriority="high"'}><figcaption>${escape(item.hair_zh)} / FACE REFERENCE</figcaption></figure>`).join('');
+    $('#hero-art').innerHTML = picks.filter(Boolean).slice(0,3).map((item,i) => `<figure class="hero-portrait"><img src="${escape(item.thumb)}" width="${item.thumb_w}" height="${item.thumb_h}" alt="${escape(t(item.hair_zh))}人像参考" ${i ? 'loading="eager"' : 'fetchpriority="high"'}><figcaption>${escape(t(item.hair_zh))} / FACE REFERENCE</figcaption></figure>`).join('');
   }
   function renderRanking() {
     $('#rank-tabs').innerHTML = ranking.cats.map(key => `<button type="button" data-rank="${escape(key)}" aria-pressed="${key === rankCategory}">${escape(ranking.labels[key])}</button>`).join('');
     const list = (ranking.top[rankCategory] || []).map(id => byId.get(id)).filter(Boolean);
-    $('#rank-list').innerHTML = list.map((item,i) => `<li class="rank-item"><button type="button" data-rank-id="${escape(item.id)}" aria-label="榜单第 ${i+1} 名：${escape(item.title)}"><div class="rank-image"><img src="${escape(item.thumb)}" width="${item.thumb_w}" height="${item.thumb_h}" alt="${escape(item.title)}" loading="lazy" decoding="async"></div><span class="rank-no">${String(i+1).padStart(2,'0')}</span><span class="rank-label">${escape(item.hair_zh)} · ${escape(item.id)}</span></button></li>`).join('');
+    $('#rank-list').innerHTML = list.map((item,i) => `<li class="rank-item"><button type="button" data-rank-id="${escape(item.id)}" aria-label="榜单第 ${i+1} 名：${escape(item.title)}"><div class="rank-image"><img src="${escape(item.thumb)}" width="${item.thumb_w}" height="${item.thumb_h}" alt="${escape(item.title)}" loading="lazy" decoding="async"></div><span class="rank-no">${String(i+1).padStart(2,'0')}</span><span class="rank-label">${escape(t(item.hair_zh))} · ${escape(item.id)}</span></button></li>`).join('');
   }
   $('#rank-tabs').addEventListener('click', event => {const button=event.target.closest('[data-rank]');if(button){rankCategory=button.dataset.rank;renderRanking();}});
   $('#rank-list').addEventListener('click', event => {const button=event.target.closest('[data-rank-id]');if(button){const list=ranking.top[rankCategory].map(id=>byId.get(id)).filter(Boolean);openViewer(list,list.findIndex(item=>item.id===button.dataset.rankId));}});
@@ -86,7 +91,7 @@
   }
   function card(item) {
     const liked = favorites.has(item.id);
-    return `<article class="portrait-card" data-id="${escape(item.id)}" aria-current="${item.id === selectedId}"><div class="card-image"><button class="card-open" type="button" data-open="${escape(item.id)}" aria-label="查看大图：${escape(item.title)}"><img src="${escape(item.thumb)}" alt="${escape(item.section_zh+' · '+item.title)}" loading="lazy" decoding="async" width="${item.thumb_w}" height="${item.thumb_h}"></button><button type="button" class="card-favorite" data-favorite="${escape(item.id)}" aria-pressed="${liked}" aria-label="${liked?'取消收藏':'收藏'}：${escape(item.id)}">${icon('heart')}</button><span class="card-type">${escape(item.origin==='user'?(uploads.language==='en'?'Custom':'自定义'):item.section_zh)}</span></div><div class="card-body"><div class="card-heading"><h3>${escape(item.title)}</h3><a class="card-download" href="${escape(item.full)}" download="${escape(item.id)}.png" aria-label="下载 ${escape(item.id)} PNG 原图，${mb(item.bytes)}" title="${item.w}×${item.h} · ${mb(item.bytes)}">${icon('download')}<span>PNG</span></a></div><div class="card-meta"><span>${escape(item.hair_zh)}</span><span>·</span><code>${escape(item.id)}</code></div></div></article>`;
+    return `<article class="portrait-card" data-id="${escape(item.id)}" aria-current="${item.id === selectedId}"><div class="card-image"><button class="card-open" type="button" data-open="${escape(item.id)}" aria-label="查看大图：${escape(item.title)}"><img src="${escape(item.thumb)}" alt="${escape(item.section_zh+' · '+item.title)}" loading="lazy" decoding="async" width="${item.thumb_w}" height="${item.thumb_h}"></button><button type="button" class="card-favorite" data-favorite="${escape(item.id)}" aria-pressed="${liked}" aria-label="${liked?'取消收藏':'收藏'}：${escape(item.id)}">${icon('heart')}</button><span class="card-type">${escape(item.origin==='user'?(uploads.language==='en'?'Custom':'自定义'):item.section_zh)}</span></div><div class="card-body"><div class="card-heading"><h3>${escape(item.title)}</h3><a class="card-download" href="${escape(item.full)}" download="${escape(item.id)}.png" aria-label="下载 ${escape(item.id)} PNG 原图，${mb(item.bytes)}" title="${item.w}×${item.h} · ${mb(item.bytes)}">${icon('download')}<span>PNG</span></a></div><div class="card-meta"><span>${escape(t(item.hair_zh))}</span><span>·</span><code>${escape(item.id)}</code></div></div></article>`;
   }
   function updateResult() {
     $('#result-count').innerHTML = `共 <strong>${fmt(filtered.length)}</strong> 张${state.favorites?'收藏':''}参考 <span>· 已加载 ${fmt(shown)} 张</span>`;
@@ -165,13 +170,13 @@
     $('#image-status').hidden=false;$('#image-status').textContent='正在加载 PNG 原图…';
     const full=new Image();full.onload=()=>{if(request===imageVersion&&viewer.open){image.src=item.full;$('#image-status').hidden=true;}};
     full.onerror=()=>{if(request===imageVersion){$('#image-status').hidden=false;$('#image-status').textContent='原图加载失败，可尝试新窗口打开';}};full.src=item.full;
-    $('#viewer-section').textContent=item.section_zh+' / '+item.section.toUpperCase()+' REFERENCE';
+    $('#viewer-section').textContent=t(item.section_zh)+' / '+item.section.toUpperCase()+' REFERENCE';
     $('#viewer-title').textContent=item.title;$('#viewer-id').textContent=item.id;
     $('#viewer-position').textContent=`${fmt(index+1)} / ${fmt(viewerList.length)}`;
     $('#viewer-meta').innerHTML=[['参考类型',item.section_zh],['发型长度',item.hair_zh],['原图尺寸',item.w+' × '+item.h],['文件大小',mb(item.bytes)]].map(([key,value])=>`<dt>${escape(key)}</dt><dd>${escape(value)}</dd>`).join('');
     $('#viewer-original-style').hidden=item.origin==='user';
     $('.viewer-source').textContent=item.origin==='user'?`${uploads.language==='en'?'Uploaded file':'用户上传'}: ${item.original_filename}\n${new Date(item.uploaded_at).toLocaleString()}`:'AI 生成的虚构人物\n原始素材来自 あぎ 的人像数据库';
-    $('#viewer-original-style').textContent=item.style?'原始描述：'+item.style:'原站未提供更细的发型描述。';
+    $('#viewer-original-style').textContent=language==='en'?(item.style_en?'Style: '+item.style_en:t('原站未提供更细的发型描述。')):item.style?'原始描述：'+item.style:'原站未提供更细的发型描述。';
     $('#viewer-download').href=item.full;$('#viewer-download').download=item.id+'.png';$('#viewer-open').href=item.full;
     $('#viewer-prev').disabled=index===0;$('#viewer-next').disabled=index===viewerList.length-1;
     $('#use-portrait').disabled = window.parent === window;
@@ -206,7 +211,13 @@
     tips:`<p class="eyebrow">A LITTLE GUIDE</p><h2 id="info-title">从参考图，到同一个角色。</h2><h3>正脸与造型，怎么选？</h3><ul><li><strong>正脸参考：</strong>以正面面部特征为重点，适合支持角色参考、面部参考的创作工具。</li><li><strong>造型参考：</strong>包含服饰、发质与整体氛围，适合建立造型方向；角度各不相同。</li><li>两类图片独立收录，不保证相同人物一一对应。原站没有提供描述的条目，仅显示发型长度与类型。</li></ul><h3>更快找到喜欢的人像</h3><ul><li>类型、发型、风格和关键词可以组合筛选。搜索支持中文、日文、ID，多关键词按“同时包含”匹配。</li><li>按 <kbd>/</kbd> 聚焦搜索。大图中按 <kbd>←</kbd> <kbd>→</kbd> 切换，按 <kbd>Esc</kbd> 关闭；手机支持左右滑动。</li><li>点击爱心收藏。收藏仅存于当前浏览器，清除浏览器数据会丢失；不会上传到服务器。</li><li>下载 PNG 原图可保留细节。参考效果由模型、提示词及设置共同决定。</li></ul><h3>关于榜单</h3><p>“原站下载榜”来自 2026 年 10 月 30 日保存的原站榜单，不是本站实时统计。本站没有浏览、下载追踪接口。</p>`,
     rules:`<p class="eyebrow">SOURCE & CREDITS</p><h2 id="info-title">来源与许可</h2><p>图片与原始元数据来自 <a href="https://ai-portrait-gallery.pages.dev/" target="_blank" rel="noopener noreferrer">AI モデル顔データベース</a>，原作者 <a href="https://x.com/agi_aibusi" target="_blank" rel="noopener noreferrer">あぎ（@agi_aibusi）</a>。本项目是独立中文整理版，不代表原作者的官方版本或背书。</p><h3>原站公开说明</h3><ul><li>原站标注 <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.zh-hans" target="_blank" rel="noopener noreferrer">CC0 1.0</a>，允许商业作品、编辑与参考使用，不强制署名。</li><li>图片为 AI 生成的虚构人物，并非真实人物。</li><li>原站同时说明：请勿用于冒充真实人物或违反公序良俗的用途；并请求避免直接再分发、转载图片数据本身。</li><li>原站注明图片元数据已删除，按现状提供，不作保证。</li></ul><p>以上保留原站公开标注与请求，请结合原始页面了解完整说明。本站页面程序的 MIT 许可不改变第三方素材的适用条款。</p><p>数据快照：2026-10-30。共 1,499 张人像，包含 893 张正脸、606 张造型参考。完整来源和原站快照保存在项目文档中。</p>`
   };
-  document.querySelectorAll('[data-info]').forEach(button=>button.addEventListener('click',()=>{$('#info-content').innerHTML=infoContent[button.dataset.info];if(!info.open)info.showModal();document.body.classList.add('modal-open');$('#info-close').focus();}));
+  const infoEnglish={
+    tips:`<p class="eyebrow">A LITTLE GUIDE</p><h2 id="info-title">From a reference to a consistent character.</h2><h3>Face or styling reference?</h3><ul><li><strong>Face references:</strong> focus on facial features for tools supporting character or face references.</li><li><strong>Styling references:</strong> show clothing, hair texture, and overall appearance from different angles.</li><li>The two collections are independent and do not guarantee matching identities. Entries without detailed descriptions use hair length and reference type.</li></ul><h3>Find portraits faster</h3><ul><li>Combine type, hair, style, and keyword filters. Search Chinese, English, Japanese, or IDs; separate terms with spaces to match all keywords.</li><li>Press <kbd>/</kbd> to search. Use <kbd>←</kbd> <kbd>→</kbd> to browse and <kbd>Esc</kbd> to close. Swipe on mobile.</li><li>Favorites remain in this browser and are lost if browser data is cleared.</li><li>Download the full-resolution PNG. Results depend on the model, prompt, and settings.</li></ul><h3>About the ranking</h3><p>The source download ranking is a snapshot from October 30, 2026. It is not a live statistic, and this gallery does not track browsing or downloads.</p>`,
+    rules:`<p class="eyebrow">SOURCE & CREDITS</p><h2 id="info-title">Sources & license</h2><p>Images and original metadata are from <a href="https://ai-portrait-gallery.pages.dev/" target="_blank" rel="noopener noreferrer">AI Model Face Database</a>, by <a href="https://x.com/agi_aibusi" target="_blank" rel="noopener noreferrer">Agi (@agi_aibusi)</a>. This is an independent catalog without endorsement by the original creator.</p><h3>Original site statements</h3><ul><li>The source marks the images <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener noreferrer">CC0 1.0</a>, permitting commercial work, editing, and reference use without mandatory attribution.</li><li>The images show AI-generated fictional people.</li><li>The source also asks users not to impersonate real people, violate public order, or directly redistribute or republish the image data.</li><li>Image metadata was removed. Assets are provided as is without warranty.</li></ul><p>Consult the original source for complete statements. The MIT license for this code does not change third-party asset terms.</p><p>Snapshot: 2026-10-30. The collection contains 1,499 portraits: 893 face and 606 styling references.</p>`
+  };
+  let infoKind='tips';
+  function showInfo(){$('#info-content').innerHTML=(language==='en'?infoEnglish:infoContent)[infoKind];}
+  document.querySelectorAll('[data-info]').forEach(button=>button.addEventListener('click',()=>{infoKind=button.dataset.info;showInfo();if(!info.open)info.showModal();document.body.classList.add('modal-open');$('#info-close').focus();}));
   $('#info-close').addEventListener('click',()=>info.close());
   info.addEventListener('close',()=>{if(!viewer.open)document.body.classList.remove('modal-open');});
   info.addEventListener('click',event=>{if(event.target===info){const rect=info.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)info.close();}});
@@ -227,14 +238,25 @@
     $('#current-portrait').textContent = '当前节点人像：' + selectedId;
     render(false);
   });
-  function applyUserNames(){records=records.map(row=>row.origin==='user'?{...row,title:uploads.name(row)}:row);byId.clear();records.forEach(row=>byId.set(row.id,row));}
-  const uploads=window.GalleryUploads.mount({kind:'portrait',meta,toolbar:$('.nav'),filters:$('.controls-inner'),
-    onSource(origin){if(origin==='user'||(origin==='builtin'&&state.section==='custom'))state.section='all';render();},onLanguage(){applyUserNames();buildHero();render();if(viewer.open){viewerList=viewerList.map(row=>byId.get(row.id));showViewer(viewerIndex);}},
+  function applyUserNames(){I.registerRows(records);records=records.map(row=>row.origin==='user'?{...row,title:uploads.name(row)}:row);byId.clear();records.forEach(row=>byId.set(row.id,row));}
+  const uploads=window.GalleryUploads.mount({kind:'portrait',meta,language,toolbar:$('.nav'),filters:$('.controls-inner'),
+    onSource(origin){if(origin==='user'||(origin==='builtin'&&state.section==='custom'))state.section='all';render();},onLanguage(value){setLanguage(value);},
     onUploaded(payload,id){clearTimeout(searchTimer);records=payload.records;meta=payload.meta;ranking=payload.ranking;applyUserNames();Object.assign(state,{section:'all',hair:'',style:'',q:'',favorites:false,sort:'default'});buildHero();renderRanking();render();updateTotals();openViewer(filtered,filtered.findIndex(row=>row.id===id));}
   });
   function updateTotals(){$('#collection-totals').textContent=`${meta.total} 张参考 · 内置 ${meta.builtin_count} / 自定义 ${meta.user_count}`;}
-  applyUserNames();updateTotals();
-  buildHero();renderRanking();render(false);
+  function setLanguage(value,notify=true){
+    language=I.normalize(value);I.persist(language);uploads.setLanguage(language,false);
+    applyUserNames();updateTotals();buildHero();renderRanking();render(false);
+    if(viewer.open){viewerList=viewerList.map(row=>byId.get(row.id));showViewer(viewerIndex);}
+    document.querySelector('.brand-language').textContent=language==='en'?'EN':'中文';
+    if(info.open)showInfo();
+    applyLanguage();
+    if(notify&&window.parent!==window)window.parent.postMessage({type:'portrait-gallery-language',language},location.origin);
+  }
+  window.addEventListener('message',event=>{
+    if(event.origin===location.origin&&event.source===window.parent&&event.data?.type==='portrait-gallery-language'&&['zh','en'].includes(event.data.language))setLanguage(event.data.language,false);
+  });
+  setLanguage(uploads.language,false);
   if (window.parent !== window) window.parent.postMessage({type:'portrait-gallery-ready'}, location.origin);
   const initialId=new URLSearchParams(location.hash.slice(1)).get('id');
   if(initialId&&byId.has(initialId)){const list=filtered.some(item=>item.id===initialId)?filtered:records;openViewer(list,list.findIndex(item=>item.id===initialId));}

@@ -22,37 +22,38 @@ class PortraitGallery:
     @classmethod
     def INPUT_TYPES(cls):
         return {"required": {"portrait_id": ("STRING", {"default": "f71f980dde3", "multiline": False,
-                "tooltip": "点击浏览人像图库，选择正脸或造型参考；只写回当前节点，不会自动运行。"})}}
+                "tooltip": "点击浏览人像图库，选择正脸或造型参考；只写回当前节点，不会自动运行。"})}, "optional":{"language":(["zh","en"],{"default":"zh","tooltip":"界面与文本输出语言 / UI and text output language"})}}
 
-    RETURN_TYPES = ("IMAGE", "INT", "INT", "STRING", "STRING", "STRING")
-    RETURN_NAMES = ("image", "width", "height", "portrait_id", "description", "section")
+    RETURN_TYPES = ("IMAGE", "INT", "INT", "STRING", "STRING", "STRING", "STRING")
+    RETURN_NAMES = ("image", "width", "height", "portrait_id", "description", "section", "portrait")
     FUNCTION = "load_portrait"
     CATEGORY = "image/Portrait Gallery"
     DESCRIPTION = '本地人像图库：正脸/造型筛选、收藏和单张自定义上传，输出完整参考图。'
 
     @classmethod
-    def VALIDATE_INPUTS(cls, portrait_id):
+    def VALIDATE_INPUTS(cls, portrait_id, language="zh"):
         try:
             row = portrait(portrait_id)
             asset("full", Path(row["full"]).name)
         except (ValueError, FileNotFoundError) as exc:
-            return str(exc)
+            return ("Cannot load portrait. Check the ID and the complete library." if language == "en" else str(exc))
         return True
 
     @classmethod
-    def IS_CHANGED(cls, portrait_id):
+    def IS_CHANGED(cls, portrait_id, language="zh"):
         row = portrait(portrait_id)
-        return hashlib.sha256(asset("full", Path(row["full"]).name).read_bytes()).hexdigest()
+        return hashlib.sha256(asset("full", Path(row["full"]).name).read_bytes()).hexdigest() + ":" + language
 
-    def load_portrait(self, portrait_id):
+    def load_portrait(self, portrait_id, language="zh"):
         row = portrait(portrait_id)
         with Image.open(asset("full", Path(row["full"]).name)) as source:
             image = ImageOps.exif_transpose(source).convert("RGBA")
             image = Image.alpha_composite(Image.new("RGBA", image.size, "white"), image).convert("RGB")
             width, height = image.size
             tensor = torch.from_numpy(np.asarray(image).astype(np.float32) / 255.0).unsqueeze(0)
-        description = " / ".join(value for value in (row["section_zh"], row["hair_zh"], row.get("name_zh", "") if row["origin"] == "user" else row["style_zh"]) if value)
-        return tensor, width, height, portrait_id, description, row["section_zh"]
+        lang = 'en' if language == 'en' else 'zh'
+        description = " / ".join(value for value in (row['section_'+lang], row['hair_'+lang], row['name_'+lang] if row['origin'] == 'user' else row['style_'+lang]) if value)
+        return tensor, width, height, portrait_id, description, row['section_'+lang], row['name_'+lang]
 
 
 class RandomPortraitGallery(PortraitGallery):
@@ -61,13 +62,14 @@ class RandomPortraitGallery(PortraitGallery):
         return {"required": {"origin": (["all", "builtin", "user"], {"default": "all",
                     "tooltip": "随机来源：全部 / 内置 / 自定义。Random source: all / built-in / custom."})},
                 "optional": {"language": (["zh", "en"], {"default": "zh",
-                    "tooltip": "新节点界面与提示语言；数据输出沿用原节点。UI/error language; data outputs retain the original node's semantics."})}}
+                    "tooltip": "界面与文本输出语言 / UI and text output language"}),
+                    "section": (["all", "face", "styling", "custom"], {"default": "all"})}}
 
     FUNCTION = "load_random"
-    DESCRIPTION = "每次运行工作流时，从可用人像原图中自动随机抽取一张；保留原节点的6个输出。"
+    DESCRIPTION = "每次运行工作流时，从可用人像原图中自动随机抽取一张；输出参考图、描述和当前名称。"
 
     @classmethod
-    def _candidates(cls, origin="all", language="zh"):
+    def _candidates(cls, origin="all", language="zh", section="all"):
         if origin not in ("all", "builtin", "user"):
             raise ValueError("Invalid random source" if language == "en" else "无效的随机来源")
         available = []
@@ -76,6 +78,8 @@ class RandomPortraitGallery(PortraitGallery):
         for row in records():
             if origin != "all" and row["origin"] != origin:
                 continue
+            if section != "all" and row.get("section") != section:
+                continue
             root = _random_catalog.USER_LIBRARY if row["origin"] == "user" else _random_catalog.LIBRARY
             target = (root / row['full']).resolve()
             if not target.is_relative_to(root):
@@ -83,31 +87,29 @@ class RandomPortraitGallery(PortraitGallery):
             if target.is_file():
                 available.append(row)
         if not available:
-            raise ValueError("No available originals in this source. Install the library, upload a reference, or change the source."
-                             if language == "en" else "当前来源没有可用人像原图，请安装素材库、上传参考图或切换来源。")
+            raise ValueError("No available originals in this source/filter. Install the library, upload a reference, or change the source."
+                             if language == "en" else "当前筛选没有可用人像原图，请安装素材库、上传参考图或切换来源。")
         return available
 
     @classmethod
-    def VALIDATE_INPUTS(cls, origin="all", language="zh"):
+    def VALIDATE_INPUTS(cls, origin="all", language="zh", section="all"):
         try:
-            cls._candidates(origin, language)
+            cls._candidates(origin, language, section)
         except (ValueError, OSError) as exc:
             return str(exc)
         return True
 
     @classmethod
-    def IS_CHANGED(cls, origin="all", language="zh"):
+    def IS_CHANGED(cls, origin="all", language="zh", section="all"):
         # Re-execute for every queued prompt; the fingerprint is JSON-safe.
         return uuid.uuid4().hex
 
-    def load_random(self, origin="all", language="zh"):
-        selected = random.choice(self._candidates(origin, language))
-        result = super().load_portrait(selected["id"])
-        if selected["origin"] == "user":
-            name = selected["name_en"] if language == "en" else selected["name_zh"]
-        else:
-            name = selected.get("姿势名称") or selected.get("title") or selected.get("分类") or selected["id"]
-        return {"ui": {"portrait_id": [result[3]], "name": [name]}, "result": result}
+    def load_random(self, origin="all", language="zh", section="all"):
+        selected = random.choice(self._candidates(origin, language, section))
+        result = super().load_portrait(selected["id"], language)
+        row = _random_catalog.localized(dict(selected))
+        name = row['name_en'] if language == 'en' else row['name_zh']
+        return {"ui": {"portrait_id": [result[3]], "name": [name], "name_zh": [row["name_zh"]], "name_en": [row["name_en"]]}, "result": result}
 
 
 routes = PromptServer.instance.routes
@@ -144,7 +146,7 @@ async def asset_route(request):
 @routes.get("/portrait_gallery/ui/{filename}")
 async def ui_route(request):
     name = request.match_info["filename"]
-    if name not in ("style.css", "core.mjs", "app.mjs", "icon.svg", "custom_upload.mjs", "custom_upload.css"):
+    if name not in ("style.css", "core.mjs", "app.mjs", "icon.svg", "custom_upload.mjs", "custom_upload.css", "i18n.mjs"):
         raise web.HTTPNotFound()
     return web.FileResponse(ROOT / "web" / name, headers={"Cache-Control": "no-cache"})
 

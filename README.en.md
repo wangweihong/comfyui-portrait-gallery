@@ -9,14 +9,25 @@ A local portrait reference gallery for ComfyUI. Built-in assets, existing IDs an
 
 Add **image → Portrait Gallery → Random Portrait Gallery**, connect `image` to your workflow or Preview Image, and run. Each execution draws a new reference automatically. Set `origin` to `all`, `builtin` or `user`. The default pool includes faces, styling references and custom portraits; entries are not assumed to share an identity.
 
-The original **PortraitGallery** keeps its inputs, fixed-selection behavior, cache and 6 output sockets. The new node uses those same outputs for one actual selected image and displays its executed ID and preview. Its `language` controls the new UI, errors and user-entered preview names; port values retain the original node's semantics without invented translations.
+The original **PortraitGallery** keeps its required ID input and first 6 output sockets, adds an optional `language` input, and appends a seventh `portrait` name output. The new node uses those same outputs for one actual selected image and displays its executed ID and preview. Both nodes use `language` for the whole gallery, details, descriptions, and `portrait` names. Set `en` for English text outputs or `zh` for Chinese, then run again to update output values.
 
 Draws may repeat by chance and are independent of gallery filters. Missing originals are skipped; an empty usable source raises a clear error. Saved preview IDs never freeze future draws. To keep a result, copy `portrait_id` into the original selector. The random node does not enqueue or start tasks itself.
 
 Import [the random portrait preview example](example_workflows/random_portrait_preview.json); a matching API graph is included.
 
+Random Pose also accepts optional `pose_system` and `angle` filters. Random Portrait accepts `section` (`face` / `styling` / `custom`). Filters default to `all`, preserving existing random workflows.
+
 ![Separate random node in ComfyUI](docs/random-node.png)
 
+
+## Qwen Image 2.1 gallery workflows
+
+The obsolete workflow examples have been replaced and renamed to describe their actual behavior.
+
+- [01 · Face/outfit replacement followed by pose editing](example_workflows/01_QwenImage2.1_换脸换装与姿态编辑_两阶段.json) ([API](example_workflows/01_QwenImage2.1_换脸换装与姿态编辑_两阶段.api.json)): requires the pose, portrait and costume galleries. Stage two uses pose image 1 and the decoded stage-one person image 2, with a dedicated PoseStudio QI2.1 v2 model-only LoRA branch at strength 1.
+- [02 · Three-reference face and outfit replacement](example_workflows/02_QwenImage2.1_换脸换装_三图参考.json) ([API](example_workflows/02_QwenImage2.1_换脸换装_三图参考.api.json)): original person image 1, costume image 2, target portrait image 3. Requires only the portrait and costume galleries; no MOSS, depth estimator, pose stage, or pose LoRA.
+
+Copy the [bundled person PNG](example_workflows/assets/h3_bfs_original_teal_character_20261014.png) to `ComfyUI/input/`, or select your own image. Re-select model paths locally. Both use 25 steps, CFG 1, Euler/simple and seed 2026103002; 01 runs this twice. The full two-stage workflow was tested successfully, and its stage-one RGB pixels matched the pre-repair output exactly. The current P003 pose follows the rear three-quarter turn, over-shoulder look and hand-on-waist placement. Other poses and fine details remain subject to visual review. See the [dependency and input-order guide](example_workflows/qwen21_gallery_workflows.md).
 
 ## Install and browse
 
@@ -24,7 +35,7 @@ Clone `https://github.com/wangweihong/comfyui-portrait-gallery.git` inside `Comf
 
 ## Upload one custom portrait
 
-1. Click **Upload portrait** in the standalone gallery or the gallery opened from a node. The new upload controls provide a Chinese / English selector; legacy built-in browsing labels remain Chinese.
+1. Click **Upload portrait** in the standalone gallery or the gallery opened from a node. The new upload controls provide a Chinese / English selector; all built-in filters and details also switch languages.
 2. Choose one finished reference image, inspect the preview and enter a name. The other-language name is optional; if omitted, the supplied name is reused without inventing a translation.
 3. Click **Save to gallery**. Success selects the Custom source, clears existing filters and opens the new image viewer.
 4. Click Use in the image viewer to update the current node. Uploading and selecting do not run the workflow.
@@ -59,3 +70,5 @@ node --test tests/test_random_frontend.cjs
 ![Custom reference viewer](docs/custom-upload-selected.png)
 
 Independent program code retains its existing license. Built-in images and source data retain their original terms; consult the source and license notices linked from the [Chinese README](README.md). Custom uploads are not attributed to the built-in dataset.
+
+The `portrait` output contains only the selected reference name. Portraits without detailed style names use the recorded hair length and reference type; no personal name is invented. Uploaded references use the supplied name for the selected language. Existing output connections remain compatible. The gallery GitHub link points to this repository.

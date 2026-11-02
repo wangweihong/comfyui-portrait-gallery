@@ -16,6 +16,20 @@ INDEX_FILE = "data/portrait-zh.json"
 ASSET_FIELDS = {'full': 'full', 'preview': 'preview', 'thumb': 'thumb'}
 FIELDS = {"full": ("full", ".png"), "thumb": ("thumb", ".webp")}
 
+NAMES_EN = json.loads((ROOT / 'translations/names.en.json').read_text(encoding='utf-8'))
+HAIR_EN = {'ショート':'Short', 'ミディアム':'Medium', 'セミロング':'Medium-long', 'ロング':'Long', 'unknown':'Unspecified'}
+SECTION_EN = {'face':'Face reference', 'styling':'Styling reference', 'custom':'Custom portrait'}
+
+def localized(row):
+    hair_en = HAIR_EN.get(row.get('hair'), 'Unspecified')
+    section_en = SECTION_EN.get(row.get('section'), 'Custom portrait')
+    style_en = NAMES_EN.get(row.get('style_zh', ''), '')
+    name_zh = row.get('name_zh') or row.get('title') or row.get('style_zh') or row['id']
+    name_en = (row.get('name_en') or name_zh) if row['origin'] == 'user' else (style_en or f'{hair_en} hair · {section_en}')
+    row.update(name_zh=name_zh, name_en=name_en, hair_en=hair_en, section_en=section_en, style_en=style_en)
+    row['search'] = ' '.join(str(value) for value in (row.get('search',''), name_zh, name_en, style_en, hair_en, section_en)).lower()
+    return row
+
 @lru_cache(maxsize=8)
 def _read_index(path, modified, size):
     rows = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -61,7 +75,7 @@ def records():
                 if not isinstance(row.get("name_zh"), str) or not row["name_zh"] or not isinstance(row.get("name_en"), str):
                     raise ValueError("自定义素材名称无效")
                 row["source_id"] = ""
-            result.append(row)
+            result.append(localized(row))
     return result
 
 # Keep cache-clear hooks used by existing maintenance scripts and tests.

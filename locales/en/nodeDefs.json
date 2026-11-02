@@ -8,7 +8,11 @@
         "tooltip": "all: all references; builtin: bundled; user: custom uploads."
       },
       "language": {
-        "name": "UI / error language"
+        "name": "UI / output language",
+        "tooltip": "Controls interface labels and text outputs; saved with the workflow."
+      },
+      "section": {
+        "name": "Reference type"
       }
     },
     "outputs": {
@@ -29,6 +33,44 @@
       },
       "5": {
         "name": "Reference type"
+      },
+      "6": {
+        "name": "Portrait name"
+      }
+    }
+  },
+  "PortraitGallery": {
+    "display_name": "Portrait Gallery",
+    "inputs": {
+      "language": {
+        "name": "UI / output language",
+        "tooltip": "Controls interface labels and text outputs; saved with the workflow."
+      },
+      "portrait_id": {
+        "name": "Portrait ID"
+      }
+    },
+    "outputs": {
+      "0": {
+        "name": "Image"
+      },
+      "1": {
+        "name": "Width"
+      },
+      "2": {
+        "name": "Height"
+      },
+      "3": {
+        "name": "Portrait ID"
+      },
+      "4": {
+        "name": "Description"
+      },
+      "5": {
+        "name": "Reference type"
+      },
+      "6": {
+        "name": "Portrait name"
       }
     }
   }

@@ -8,7 +8,11 @@
         "tooltip": "all：全部；builtin：内置；user：自定义。"
       },
       "language": {
-        "name": "界面与提示语言"
+        "name": "界面与输出语言",
+        "tooltip": "控制界面及文本输出语言，随工作流保存。"
+      },
+      "section": {
+        "name": "人像类型"
       }
     },
     "outputs": {
@@ -29,6 +33,44 @@
       },
       "5": {
         "name": "参考类型"
+      },
+      "6": {
+        "name": "人像名称"
+      }
+    }
+  },
+  "PortraitGallery": {
+    "display_name": "Portrait Gallery 人像图库",
+    "inputs": {
+      "language": {
+        "name": "界面与输出语言",
+        "tooltip": "控制界面及文本输出语言，随工作流保存。"
+      },
+      "portrait_id": {
+        "name": "人像编号"
+      }
+    },
+    "outputs": {
+      "0": {
+        "name": "图像"
+      },
+      "1": {
+        "name": "宽度"
+      },
+      "2": {
+        "name": "高度"
+      },
+      "3": {
+        "name": "人像编号"
+      },
+      "4": {
+        "name": "描述"
+      },
+      "5": {
+        "name": "参考类型"
+      },
+      "6": {
+        "name": "人像名称"
       }
     }
   }

@@ -12,11 +12,13 @@ ComfyUI 本地中文人像图库节点，提供与 `ai-portrait-gallery-zh` 一�
 
 添加 **image → Portrait Gallery → Random Portrait Gallery 随机人像图库**，将 `image` 接入后续工作流或 Preview Image。每次执行会重新随机抽取一张原图，无需点击随机按钮。`origin` 可选 `all`（全部）、`builtin`（内置）或 `user`（自定义）。默认范围包含正脸、造型及自定义人像；不假定不同条目属于同一人物。
 
-原 **PortraitGallery** 的输入、固定选图、缓存、6个输出和连线均保持不变。新节点沿用这6个输出，所有数据对应同一张实际抽中的素材；执行后显示编号和预览。新节点的 `language` 切换界面、提示及自定义预览名称语言，端口数据仍沿用原节点语义，不补造内置描述的译文。
+原 **PortraitGallery** 保留原有必填输入及前 6 个输出，新增可选 `language` 输入，并在最后追加 `portrait` 名称输出。随机节点使用相同的 7 个输出。所有数据对应同一张实际抽中的素材；执行后显示编号和预览。两个节点的 `language` 同时控制界面、详情、描述及 `portrait` 名称输出；英文模式使用已收录的英文元数据。
 
 抽样可能偶然重复，不受浏览页面筛选影响；缺失原图会跳过，无可用图片时明确报错。保存的预览编号不参与下次抽样。需要固定结果时，将输出 `portrait_id` 填入原节点。新节点本身不会启动或追加任务。
 
 导入 [随机人像预览示例](example_workflows/random_portrait_preview.json)，附同名 API 工作流。
+
+随机姿势新增可选 `pose_system`（体系）和 `angle`（视角）；随机人像新增 `section`（`face` / `styling` / `custom`）。这些筛选默认 `all`，旧随机流程行为不变。
 
 ![独立随机人像节点实测](docs/random-node.png)
 
@@ -24,7 +26,7 @@ ComfyUI 本地中文人像图库节点，提供与 `ai-portrait-gallery-zh` 一�
 ## 单张上传自定义人像
 
 1. 在独立图库或节点内嵌图库的顶部点击 **上传人像**。
-2. 选择一张现成参考图，查看预览，填写名称。另一语言名称可选；未填写时沿用已有名称，不自动翻译。顶部 **中文 / English** 切换新增上传控件、提示和自定义名称的语言，原有内置图库浏览标签保持中文。
+2. 选择一张现成参考图，查看预览，填写名称。另一语言名称可选；未填写时沿用已有名称，不自动翻译。顶部 **中文 / English** 切换整张图库页面、筛选项、详情、帮助和上传控件，并同步节点的文本输出语言；切换后重新运行以更新输出。
 3. 点击 **保存到图库**。成功后切换到“自定义”来源，清除分类、搜索等筛选，并打开新素材的大图。
 4. 在大图中点击 **使用此人像 → ComfyUI**，写回当前节点；上传和选择都不会自动运行或排队。
 
@@ -67,66 +69,29 @@ ComfyUI 本地中文人像图库节点，提供与 `ai-portrait-gallery-zh` 一�
 | image | IMAGE | 完整 PNG 原图，RGB，透明处合成白色，保持原尺寸 |
 | width / height | INT | 输出宽高 |
 | portrait_id | STRING | 选定人像 ID |
-| description | STRING | 中文参考类型、发型及原站已有的风格描述 |
+| description | STRING | 当前语言的参考类型、发型及原站已有的风格描述 |
 | section | STRING | 正脸参考 / 造型参考 |
 
 高级：环境变量 `COMFYUI_PORTRAIT_GALLERY_LIBRARY` 可指定其他完整图库根目录。服务端仅允许索引中登记的图片，拒绝路径穿越、未知 ID 和指向图库外的符号链接。
 
-## 当前推荐：只用 Qwen Image 2.1 完成人物换装
+## Qwen Image 2.1 · 换脸换装与姿态编辑
 
-导入 [`example_workflows/qwen21_portrait_outfit.json`](example_workflows/qwen21_portrait_outfit.json)，或使用对应的 [API 图](example_workflows/qwen21_portrait_outfit.api.json)。需要同时安装 [comfyui-costume-gallery](https://github.com/wangweihong/comfyui-costume-gallery)。
+旧工作流已直接替换并按实际功能命名，不再沿用错误的 MOSS 名称。
 
-- **图1：Portrait Gallery 人像图库**，只提供人物身份、五官与发型。
-- **图2：Costume Gallery 服装图库**，提供衣服、颜色、材质和搭配层次。
-- **Qwen Image 2.1** 根据两张图重新构建协调的全身人物，再适配服装；不使用 MOSS、姿势图库或深度控制。
+| 工作流 | 可视化 JSON | API JSON | 作用 |
+| --- | --- | --- | --- |
+| 01 两阶段换脸换装与姿态编辑 | [导入](example_workflows/01_QwenImage2.1_换脸换装与姿态编辑_两阶段.json) | [API](example_workflows/01_QwenImage2.1_换脸换装与姿态编辑_两阶段.api.json) | 第一阶段换脸换装，第二阶段通过PoseStudio V2迁移姿势 |
+| 02 三图换脸换装 | [导入](example_workflows/02_QwenImage2.1_换脸换装_三图参考.json) | [API](example_workflows/02_QwenImage2.1_换脸换装_三图参考.api.json) | 图1原人物、图2服装、图3目标人像，一次采样完成 |
 
-提示词明确区分头像参考和全身构图：不要沿用头像特写的头部占比，统一构建头部、肩颈、躯干、骨盆与四肢尺度，再让衣服的肩线、袖长、腰线和衣摆服从人体。人物与服装可通过两个图库节点更换；场景和动作可自行修改。
+01 需要同时安装 pose、portrait、costume 三个图库；02 只需要 portrait 和 costume。请先将[附带原人物图](example_workflows/assets/h3_bfs_original_teal_character_20261014.png)复制到 `ComfyUI/input/`，或在 Load Image 中选择自己的参考图。模型路径、参考职责和测试范围见[完整指南](example_workflows/qwen21_gallery_workflows.md)。
 
-![Qwen Image 2.1 人物与服装双参考工作流](docs/images/qwen_workflow.png)
+01 保留已经成功的第一阶段配置。第二阶段使用**图1姿势图库线稿、图2第一阶段解码成图**，仅第二阶段模型分支加载 QI2.1 PoseStudio V2 LoRA（强度1）。25步、CFG1、Euler/simple、固定种子2026103002。完整链路已实测，第一阶段输出与修复前结果的RGB像素完全相同；P003的背侧转身、回头和扶腰已跟随。其他姿势、手指与服装背面细节仍需检查。
 
-### 实际生成效果
+![第一阶段人物与服装替换](docs/images/qwen21_gallery/stage1.png)
 
-下列图片由本机 Qwen Image 2.1 实际生成。固定种子 `2026103002`，25 步、CFG 1、Euler/simple、双参考分辨率 1024，输出 928×1152；没有对结果进行局部合成或修图。
+![第二阶段姿势编辑](docs/images/qwen21_gallery/stage2.png)
 
-| 人物参考（图1） | 服装参考（图2） | 自然比例提示词结果 |
-| --- | --- | --- |
-| <img src="library/img/thumb/f71f980dde3.webp" width="220" alt="人物参考 f71f980dde3"> | <img src="docs/images/costume_reference.png" width="220" alt="服装参考 SPR-0002"> | <img src="docs/images/qwen_natural_proportions.png" width="300" alt="Qwen人物换装和自然比例实测"> |
-
-| 简短提示词原结果 | 明确参考职责与人体尺度后 |
-| --- | --- |
-| ![原结果](docs/images/qwen_before.png) | ![调整提示词后的结果](docs/images/qwen_natural_proportions.png) |
-
-[另一版通用英文提示词的实测结果](docs/images/qwen_alternative.png)。这些是特定参考图和种子的示例；模型仍可能改变场景、发型、配饰或叠穿关系，不能保证精确身份和服装细节完全一致。
-
-## 可选示例：MOSS 指定姿势 → Qwen Image 2.1 换脸
-
-完整示例：`example_workflows/01_MOSS姿态服装_Qwen21人像换脸.json`。
-
-1. **Pose Gallery** 选姿势，Depth Anything V2 估计深度图，等比缩放到约 1 MP，供 MOSS 深度控制。
-2. **Costume Gallery** 选衣服。PNG 通过 MOSS 视觉文本编码器作为服装参考，英文关键词自动拼入提示词；不把服装平铺图作为人物深度图。
-3. **MOSS SFT** 生成指定姿势和服装的人物照片，保存第一阶段结果。
-4. **Portrait Gallery** 选目标脸。Qwen Image 2.1 的图一是 MOSS 成图，图二是人像原图；提示词要求只替换面部身份，保留图一的姿势、发型、服装、光照与场景。
-
-两阶段均使用通用提示词，不写死性别、年龄、发型、背景或具体动作。服装关键词和姿势描述随图库选择自动读取，切换素材无需改写提示词。Qwen 只按两张图的职责执行换脸，不加局部合成或针对某张图的修补分支。
-
-全部保存节点使用 `images/qwen/gallery/` 前缀：深度图在 `depth/`，MOSS 中间图在 `moss/`，最终换脸图在 `results/`。相对位置从 `ComfyUI/output/` 开始；本次实测另外同步到工作区同名目录。
-
-### 本机模型配置
-
-| 类型 | 本机选择值 |
-| --- | --- |
-| MOSS diffusion model | `moss/moss_image_sft_bf16.safetensors` |
-| MOSS depth LoRA | `moss/moss_image_color_depth_control.safetensors` |
-| MOSS text encoder | `moss/qwen3.5_9b_int8_convrot.safetensors` |
-| MOSS VAE | `moss/flux2-vae.safetensors` |
-| 深度预处理 | `depth_anything_v2_vitl.pth` |
-| Qwen diffusion model | `image2image/qwen_image_2.1_bf16.safetensors` |
-| Qwen text encoder | `text_encoders/qwen3vl_8b_bf16.safetensors` |
-| Qwen VAE | `vae/qwen_image_2.1_vae_bf16.safetensors` |
-
-MOSS：ER-SDE 50 步、CFG 3、simple 调度、shift 5、SLG 第 24 层、TSR 0.95、深度强度 0.65、结束位置 0.7。Qwen：基础 BF16、25 步、CFG 1、Euler/simple，缓存 auto/default，**不叠加 PoseStudio 或 Turbo LoRA**。模型不包含在本节点素材库中，其他机器需重选已安装模型。
-
-这是生成式参考图编辑流程；MOSS 的衣服细节和 Qwen 的身份、表情保留程度需以实际结果检查，不是逐像素不变的严格换脸算法。
+新增 `portrait` STRING 输出位于最后，返回当前语言的人像名称。
 
 ## 本地素材与维护
 
@@ -151,3 +116,7 @@ node --check web/app.mjs
 ```bash
 node --test tests/test_random_frontend.cjs
 ```
+
+## 名称输出与语言
+
+固定和随机节点都支持 `language=zh/en`，语言随工作流保存。新增第 7 个 `portrait` 输出，仅包含当前素材名称，前 6 个端口顺序不变。内置人像沿用来源中的风格名称；无详细名称时使用发长和参考类型，不编造人物姓名。自定义素材使用用户填写的对应语言名称，未提供译文的自定义文字沿用原文。图库项目链接指向本仓库。
