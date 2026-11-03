@@ -28,6 +28,7 @@
   const savedFavorites = stored('portrait-atlas-favorites-v1', []);
   const favorites = new Set(Array.isArray(savedFavorites) ? savedFavorites.filter(id => byId.has(id)) : []);
   const state = {...readState(location.hash, records), limit:40};
+  let editor;
   let filtered = [], shown = 0, rankCategory = '総合', viewerList = [], viewerIndex = -1, imageVersion = 0, lastFocus = null, toastTimer;
   let selectedId = '';
   const viewer = $('#viewer');
@@ -110,7 +111,7 @@
   function showMore() {
     const next = Math.min(shown+state.limit, filtered.length);
     $('#grid').insertAdjacentHTML('beforeend', filtered.slice(shown,next).map(card).join(''));
-    shown = next;updateResult();
+    shown = next;updateResult();editor?.paint();
   }
   function render(updateURL=true) {
     filtered = filterRecords(records.filter(row=>uploads.matches(row)),state,favorites);
@@ -181,7 +182,7 @@
     $('#viewer-prev').disabled=index===0;$('#viewer-next').disabled=index===viewerList.length-1;
     $('#use-portrait').disabled = window.parent === window;
     $('#use-portrait').textContent = window.parent === window ? '请从 ComfyUI 节点打开以使用人像' : '使用此人像 → ComfyUI';
-    updateViewerFavorite();writeURL(item.id);
+    updateViewerFavorite();writeURL(item.id);editor?.paint();
   }
   function openViewer(list,index) {
     if(!list[index])return;lastFocus=document.activeElement;viewerList=[...list];
@@ -245,7 +246,7 @@
   });
   function updateTotals(){$('#collection-totals').textContent=`${meta.total} 张参考 · 内置 ${meta.builtin_count} / 自定义 ${meta.user_count}`;}
   function setLanguage(value,notify=true){
-    language=I.normalize(value);I.persist(language);uploads.setLanguage(language,false);
+    language=I.normalize(value);editor?.setLanguage(language);I.persist(language);uploads.setLanguage(language,false);
     applyUserNames();updateTotals();buildHero();renderRanking();render(false);
     if(viewer.open){viewerList=viewerList.map(row=>byId.get(row.id));showViewer(viewerIndex);}
     document.querySelector('.brand-language').textContent=language==='en'?'EN':'中文';
@@ -255,6 +256,19 @@
   }
   window.addEventListener('message',event=>{
     if(event.origin===location.origin&&event.source===window.parent&&event.data?.type==='portrait-gallery-language'&&['zh','en'].includes(event.data.language))setLanguage(event.data.language,false);
+  });
+  editor=window.GalleryAssetEditor.mount({
+    language,toolbar:$('.nav'),feedback:$('.controls-inner'),grid:$('#grid'),cardSelector:'.portrait-card',openLink:$('#viewer-open'),
+    translate:(value,lang)=>I.translate(value,lang),records:()=>records,visible:()=>filtered,current:()=>viewer.open?viewerList[viewerIndex]:null,
+    async reload({keepId}={}){
+      closeViewer();
+      const [rows,stats]=await Promise.all([fetch('catalog',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();}),fetch('meta',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();})]);
+      records=rows.map(row=>({...row,...Object.fromEntries(['full','preview','thumb'].filter(key=>row[key]).map(key=>[key,`assets/${key}/${row.id}${key==='full'?'.png':'.webp'}${row.asset_version?'?v='+encodeURIComponent(row.asset_version):''}`]))}));meta=stats;
+      applyUserNames();updateTotals();uploads.update(meta);
+      setLanguage(language,false);
+      if(keepId){const list=filtered.some(row=>row.id===keepId)?filtered:records;openViewer(list,list.findIndex(row=>row.id===keepId));}
+      window.parent.postMessage({type:'portrait-gallery-library-changed'},location.origin);
+    }
   });
   setLanguage(uploads.language,false);
   if (window.parent !== window) window.parent.postMessage({type:'portrait-gallery-ready'}, location.origin);
