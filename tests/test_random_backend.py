@@ -94,4 +94,76 @@ class RandomNodeTests(unittest.TestCase):
         self.assertEqual(self.old().load_portrait(self.custom['id'],'en')[-1],'My reference')
 
 
+
+    def test_locked_selection_preserves_all_outputs_without_resampling(self):
+        fixed = self.module.PortraitGallery
+        identity = self.custom['id']
+        inputs = dict(origin='builtin', language='en', portrait_id=identity, locked=True)
+        inputs['section'] = 'face'
+        with patch.object(self.module.random, 'choice', side_effect=AssertionError('Locked selection must not draw')):
+            self.assertIs(self.node.VALIDATE_INPUTS(**inputs), True)
+            result = [self.node().load_random(**inputs) for _ in range(3)]
+            fingerprint = self.node.IS_CHANGED(**inputs)
+            self.assertEqual(fingerprint, self.node.IS_CHANGED(**inputs))
+        expected = fixed().load_portrait(identity, 'en')
+        for item in result:
+            self.assertTrue(item['result'][0].equal(expected[0]))
+            self.assertEqual(item['result'][1:], expected[1:])
+            self.assertEqual(item['ui']['portrait_id'], [identity])
+        self.assertNotEqual(fingerprint, self.node.IS_CHANGED(**dict(inputs, language='zh')))
+        from PIL import Image
+        Image.new('RGB', (10, 14), 'green').save(self.catalog.USER_LIBRARY / self.custom['full'])
+        self.assertNotEqual(fingerprint, self.node.IS_CHANGED(**inputs))
+        with patch.object(self.module.random, 'choice', return_value=self.builtin) as choose:
+            self.assertEqual(self.node().load_random(portrait_id=identity)['result'][3], self.builtin['id'])
+            choose.assert_called_once()
+
+    def test_missing_locked_images_fail_without_drawing_replacements(self):
+        with patch.object(self.module.random, 'choice', side_effect=AssertionError('Must not draw')):
+            self.assertIn('先点击骰子', self.node.VALIDATE_INPUTS(locked=True))
+            with self.assertRaises(ValueError):
+                self.node().load_random(locked=True)
+            identity = self.custom['id']
+            (self.catalog.USER_LIBRARY / self.custom['full']).unlink()
+            self.assertIsNot(self.node.VALIDATE_INPUTS(portrait_id=identity, locked=True), True)
+            with self.assertRaises((ValueError, FileNotFoundError)):
+                self.node().load_random(portrait_id=identity, locked=True)
+
+    def test_dice_http_filters_and_no_repeat_never_load_image_tensors(self):
+        import asyncio
+        async def scenario():
+            from aiohttp import web
+            from aiohttp.test_utils import TestClient, TestServer
+            app = web.Application()
+            app.add_routes(self.module.routes)
+            fixed = self.module.PortraitGallery
+            with patch.object(fixed, 'load_portrait', side_effect=AssertionError('Dice must not load image tensors')):
+                async with TestClient(TestServer(app)) as client:
+                    response = await client.get('/portrait_gallery/random', params={'exclude_id': self.builtin['id'], 'language': 'en'})
+                    self.assertEqual(response.status, 200)
+                    self.assertEqual(response.headers['Cache-Control'], 'no-store')
+                    data = await response.json()
+                    self.assertEqual(data['portrait_id'], self.custom['id'])
+                    self.assertEqual(data['name'], self.custom['name_en'])
+                    response = await client.get('/portrait_gallery/random', params={'origin': 'builtin', 'exclude_id': self.builtin['id']})
+                    self.assertEqual(response.status, 200)
+                    self.assertEqual((await response.json())['portrait_id'], self.builtin['id'])
+                    response = await client.get('/portrait_gallery/random', params={'origin': 'bad'})
+                    self.assertEqual(response.status, 400)
+                    self.assertIn('error', await response.json())
+                    response = await client.get('/portrait_gallery/random', params={'origin': 'user', 'section': 'face'})
+                    self.assertEqual(response.status, 400)
+                    response = await client.get('/portrait_gallery/random', params={'origin': 'user', 'section': 'custom'})
+                    self.assertEqual(response.status, 200)
+                    self.assertEqual((await response.json())['portrait_id'], self.custom['id'])
+        asyncio.run(scenario())
+
+    def test_cleaned_originals_cannot_reenter_the_random_pool(self):
+        for state in ('thumb_only', 'removed'):
+            row = dict(self.catalog.portrait(self.builtin['id']), management_state=state)
+            with patch.object(self.module, 'records', return_value=[row]):
+                with self.assertRaises(ValueError):
+                    self.node._candidates('builtin')
+
+
 if __name__=='__main__':unittest.main()

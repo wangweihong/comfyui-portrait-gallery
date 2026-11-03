@@ -1,7 +1,7 @@
 {
   "RandomPortraitGallery": {
     "display_name": "Random Portrait Gallery",
-    "description": "Draw a reference on every execution; the original selector is unchanged.",
+    "description": "Click the dice to preview a random portrait. Lock the selection to keep it for workflow runs.",
     "inputs": {
       "origin": {
         "name": "Random source",
@@ -13,6 +13,14 @@
       },
       "section": {
         "name": "Reference type"
+      },
+      "portrait_id": {
+        "name": "Current portrait ID",
+        "tooltip": "The selected reference. Workflow runs keep this image while locked."
+      },
+      "locked": {
+        "name": "Lock random selection",
+        "tooltip": "Keep the current selection and disable the dice."
       }
     },
     "outputs": {
