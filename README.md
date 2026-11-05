@@ -2,6 +2,8 @@
 
 **简体中文** · [English](README.en.md)
 
+支持旧画布和 **Nodes 2.0**（ComfyUI 前端 1.57.4 实测），包括浏览选图、预览、骰子和锁定。更新后请强制刷新页面加载新版前端脚本。
+
 ComfyUI 本地中文人像图库节点，提供与 `ai-portrait-gallery-zh` 一致的暖色画廊展示。包含 **1,499 张 PNG 原图和 1,499 张 WebP 缩略图**：893 张正脸、606 张造型，支持类型、发型长度、50 种风格、中文/日文/ID 搜索、收藏与大图预览。
 
 ![在 ComfyUI 内搜索并选择人像](docs/gallery-selection.png)
